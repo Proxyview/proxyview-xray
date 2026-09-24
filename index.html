@@ -27,6 +27,10 @@ h1,h2,h3{margin:0;text-wrap:balance;letter-spacing:-.02em}
 .brand .nm{font-size:16px;font-weight:800;letter-spacing:-.03em}
 .brand .tag{font-family:var(--mono);font-size:9.5px;letter-spacing:.22em;color:var(--arc);margin-top:1px}
 .railhead{font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;color:var(--fog);padding:14px 6px 6px}
+.grouphead{font-family:var(--mono);font-size:9px;letter-spacing:.18em;color:var(--fog);
+  padding:12px 6px 5px}
+.chip.samp{color:var(--amb);border-color:#7a5405;background:rgba(255,170,0,.1);font-size:8.5px;
+  letter-spacing:.1em;padding:2px 5px}
 .caseitem{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:8px;text-align:left;width:100%;border:1px solid transparent}
 .caseitem:hover{background:var(--ink3)}
 .caseitem[aria-current="true"]{background:var(--ink3);border-color:var(--line)}
@@ -150,6 +154,9 @@ label{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.14em
 .privacy .pt{font-size:12px;line-height:1.55;color:var(--mist)}
 .privacy .pt b{color:var(--white);font-weight:600}
 .privacy .pt a,.privacy .pt code{color:var(--arc);font-family:var(--mono);font-size:11px;user-select:all}
+.undeliv{margin-top:12px;padding:11px 12px;border:1px solid #7d2a3d;border-radius:var(--r);
+  background:rgba(255,93,128,.07);display:flex;flex-direction:column;gap:6px}
+.undeliv .lbl{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;color:var(--danger)}
 .contact{margin-top:12px;padding:11px 12px;border:1px solid var(--line);border-radius:var(--r);background:var(--ink2);display:flex;flex-direction:column;gap:7px}
 .contact .lbl{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;color:var(--fog)}
 .addr{font-family:var(--mono);font-size:11px;color:var(--arc);user-select:all;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
@@ -233,6 +240,12 @@ input[aria-invalid="true"]{border-color:var(--danger)}
 
     <div id="who" class="tiny" hidden style="padding:11px 3px 0;border-top:1px solid var(--line);margin-top:12px"></div>
 
+    <div id="undelivered" class="undeliv" hidden>
+      <div class="lbl">NOT DELIVERED</div>
+      <div class="tiny">Your details did not reach Proxyview. Your cases still run and stay in this
+      browser. Send them to <code class="addr">hello@getproxyview.com</code> so we can pick this up.</div>
+    </div>
+
     <div class="contact">
       <div class="lbl">QUESTIONS</div>
       <div class="row" style="gap:6px;flex-wrap:nowrap">
@@ -260,6 +273,21 @@ input[aria-invalid="true"]{border-color:var(--danger)}
    evidence class, and a test that cannot run reports that it could not
    run rather than returning a pass.
    ═══════════════════════════════════════════════════════════════════ */
+/* ── Where submissions go ──────────────────────────────────────────────
+   Empty posts to Netlify Forms on this same site, which needs form
+   detection turned on in the Netlify UI and a redeploy afterwards, because
+   detection is off by default for sites created since April 2023.
+
+   If you would rather not depend on that, put a hosted form endpoint here
+   instead — Formspree, Formspark or Basin all give you a URL and email you
+   on every submission — and nothing else in this file has to change:
+
+     const ENDPOINT = 'https://formspree.io/f/xxxxxxxx';
+
+   Note that file uploads need the paid tier on most of those services; the
+   text fields work on every tier.                                        */
+const ENDPOINT = '';
+
 const DOMAINS = {
   P:'Source & Provenance', T:'Time & Freshness', L:'Location & Subject',
   C:'Capture & Sensor Integrity', N:'Continuity & State Change',
@@ -544,19 +572,28 @@ function renderRail(){
     w.innerHTML='<b>'+esc(S.profile.company)+'</b><br>'+esc(S.profile.email)+'<br>'+esc(S.profile.phone);
   } else { w.hidden=true; }
   $('#newcase').disabled=!S.profile;
+  const u=$('#undelivered'); if(u) u.hidden=!S.undelivered;
   const list=$('#caselist'); list.innerHTML='';
-  if(!S.cases.length) list.append(el('div','tiny',
-    '<span style="padding:0 6px">No cases yet. Start with a sample or upload your own.</span>'));
-  S.cases.forEach(a=>{
+  const row=a=>{
     const b=el('button','caseitem');
     b.setAttribute('aria-current', S.sel===a.c.id?'true':'false');
     b.innerHTML='<span class="dot bg-'+OCLASS[a.outcome]+'"></span>'+
       '<span class="cid">'+esc(a.c.id)+'</span>'+
+      (a.sample?'<span class="chip samp">SAMPLE</span>':'')+
       '<span class="chip">'+a.M+'</span>';
     b.onclick=()=>{S.sel=a.c.id; S.view='report'; render();};
-    list.append(b);
-  });
-  const used=S.cases.length;
+    return b;
+  };
+  const samples=S.cases.filter(a=>a.sample), mine=own();
+  if(samples.length){
+    list.append(el('div','grouphead','SAMPLES'));
+    samples.forEach(a=>list.append(row(a)));
+  }
+  list.append(el('div','grouphead','YOUR CASES'));
+  if(!mine.length) list.append(el('div','tiny',
+    '<span style="padding:0 6px">None yet. Start a case to upload a closed account.</span>'));
+  mine.forEach(a=>list.append(row(a)));
+  const used=mine.length;
   $('#used').textContent=Math.min(used,FREE);
   const bar=$('#bar'); bar.innerHTML='';
   for(let i=0;i<FREE;i++){const i2=el('i'); if(i<used) i2.className=used>=FREE?'full':'on'; bar.append(i2);}
@@ -564,7 +601,8 @@ function renderRail(){
   $('#metertext').textContent = S.paid
     ? 'Cycle active. Cases run without a limit.'
     : over ? 'Free cases used. Talk to us about a cycle.'
-    : (FREE-used)+' free case'+(FREE-used===1?'':'s')+' remaining. No card required.';
+    : (FREE-used)+' free case'+(FREE-used===1?'':'s')+' remaining. The samples above are ours and '
+      +'do not count.';
   $('#upgrade').style.display = over ? 'block' : 'none';
   $('#upgrade').onclick=()=>{S.view='paywall'; render();};
 }
@@ -593,11 +631,13 @@ function viewHome(){
   v.append(g);
 
   const cta=el('div','row'); cta.style.marginTop='22px';
-  const b1=el('button','btn primary','Start a case'); b1.onclick=()=>{S.view='upload'; render();};
-  const b2=el('button','btn','Run the sample book'); b2.onclick=runSampleBook;
+  const b1=el('button','btn primary','Start a case');
+  b1.onclick=()=>{S.view=atLimit()?'paywall':'upload'; render();};
+  const b2=el('button','btn','Open a sample'); b2.id='worked';
+  b2.onclick=()=>{ const sm=S.cases.find(a=>a.sample); if(sm){ S.sel=sm.c.id; S.view='report'; render(); } };
   cta.append(b1,b2); v.append(cta);
 
-  if(S.cases.length) v.append(portfolioPanel());
+  v.append(portfolioPanel());
 }
 
 const CONSUMER = ['gmail.com','googlemail.com','yahoo.com','yahoo.co.uk','hotmail.com','hotmail.co.uk',
@@ -740,14 +780,18 @@ function viewGate(){
       .then(r=>{ S.profile.delivered=!!(r&&r.ok); })
       .catch(()=>{ S.profile.delivered=false; });
 
-    S.cases.push(assess(SAMPLES[0],false), assess(SAMPLES[3],false));
-    S.nextSample=2; S.view='home'; render();
+    /* Two of our own closed draws open with the workspace so it is never
+       empty and so the portfolio view has something to aggregate. They are
+       labelled as samples everywhere they appear and they never touch the
+       free allowance, which counts the client's own cases only. */
+    S.cases.push(sample(assess(SAMPLES[0],false)), sample(assess(SAMPLES[3],false)));
+    S.view='home'; render();
   };
 }
 
 function viewUpload(){
   const v=$('#view'); v.innerHTML='';
-  const over = S.cases.length>=FREE && !S.paid;
+  const over = atLimit();
   $('#crumb').innerHTML='WORKSPACE / <b>NEW CASE</b>';
   if(over){ S.view='paywall'; return viewPaywall(); }
 
@@ -833,23 +877,47 @@ function paintFiles(){
 /* Post to Netlify. Nothing here ever blocks the client: the workspace and the
    report open whether or not the post lands, and a failure is recorded rather
    than shown, so a network problem at their end does not cost the case. */
+const DIAG = {posts:[], endpoint:ENDPOINT || 'netlify-forms'};
+
 function postForm(name, fields, files){
+  const to = ENDPOINT || '/';
+  const rec = {form:name, to, at:new Date().toISOString(), files:(files||[]).length};
+  DIAG.posts.push(rec);
+  let p;
   try{
-    let body;
     if(files && files.length){
-      body=new FormData();
+      const body=new FormData();
       body.append('form-name',name);
       Object.entries(fields).forEach(([k,v])=>body.append(k,v));
       files.forEach(f=>body.append('evidence',f,f.name));
       body.append('bot-field','');
-      return fetch('/',{method:'POST',body});   // the browser sets the boundary
+      p=fetch(to,{method:'POST',body});   // the browser sets the boundary
+    }else{
+      const body=new URLSearchParams({'form-name':name,...fields,'bot-field':''});
+      p=fetch(to,{method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},body});
     }
-    body=new URLSearchParams({'form-name':name,...fields,'bot-field':''});
-    return fetch('/',{method:'POST',
-      headers:{'Content-Type':'application/x-www-form-urlencoded'},body});
-  }catch{
-    return Promise.reject(new Error('post failed'));
+  }catch(err){
+    rec.ok=false; rec.why='the browser refused the request';
+    S.undelivered=true; renderRail();
+    return Promise.reject(err);
   }
+  return p.then(r=>{
+    rec.ok=r.ok; rec.status=r.status;
+    if(!r.ok){
+      /* A 404 here is the signature of Netlify form detection being off:
+         the site serves the page but has no form handler to accept the post. */
+      rec.why = r.status===404
+        ? 'no form handler answered — on Netlify this means form detection is off, or the form name is not registered'
+        : 'the server answered ' + r.status;
+      S.undelivered=true; renderRail();
+    }
+    return r;
+  }).catch(err=>{
+    rec.ok=false; rec.why='the request never completed';
+    S.undelivered=true; renderRail();
+    throw err;
+  });
 }
 
 function sendCase(a){
@@ -889,17 +957,8 @@ function runLive(){
   S.dropped=[]; S.rejected=[];
   runOne(c,true);
 }
-function runSampleBook(){
-  SAMPLES.slice(0,Math.min(FREE,SAMPLES.length)).forEach(s=>{
-    if(S.cases.length>=FREE && !S.paid) return;
-    if(S.cases.find(a=>a.c.id===s.id)) return;
-    S.cases.push(assess(s,false));
-  });
-  S.nextSample=S.cases.length;
-  S.view='home'; render();
-}
 function runOne(c,live){
-  if(S.cases.length>=FREE && !S.paid){ S.view='paywall'; return render(); }
+  if(atLimit()){ S.view='paywall'; return render(); }
   if(S.cases.find(a=>a.c.id===c.id)) c={...c,id:c.id+'-'+(S.cases.length+1)};
   S.nextSample++;
   S.pending=assess(c,live); S.view='run'; render();
@@ -972,8 +1031,18 @@ function traceBlock(f,a){
 function viewReport(){
   const a=S.cases.find(x=>x.c.id===S.sel)||S.cases[S.cases.length-1];
   if(!a){ S.view='home'; return viewHome(); }
+  const demo=!!a.sample;
   const v=$('#view'); v.innerHTML='';
-  $('#crumb').innerHTML='WORKSPACE / <b>'+esc(a.c.id)+'</b> / ASSURANCE REPORT';
+  $('#crumb').innerHTML='WORKSPACE / <b>'+esc(a.c.id)+'</b>'
+    +(demo?' <span class="chip samp">SAMPLE</span>':'')+' / ASSURANCE REPORT';
+
+  if(demo){
+    const banner=el('div','note'); banner.id='demobanner'; banner.style.marginBottom='16px';
+    banner.innerHTML='<b>Sample.</b> One of our own closed draws, here so you can see what comes '
+      +'back before you send anything. It is not one of your cases and it has not used any of your '
+      +'five free cases.';
+    v.append(banner);
+  }
 
   v.append(el('div','eyebrow','PV-ORA-AR-01 · OPERATIONAL REALITY ASSURANCE REPORT'));
   const head=el('div','row'); head.style.alignItems='flex-start'; head.style.marginBottom='4px';
@@ -1078,21 +1147,32 @@ function viewReport(){
 
   /* actions */
   const act=el('div','row'); act.style.marginTop='18px';
-  const nb=el('button','btn primary','Run another case');
-  nb.onclick=()=>{ S.view = (S.cases.length>=FREE && !S.paid) ? 'paywall' : 'upload'; render(); };
-  const hb=el('button','btn','Portfolio view'); hb.onclick=()=>{S.view='home'; render();};
+  const nb=el('button','btn primary', own().length ? 'Run another case' : 'Start my first case');
+  nb.onclick=()=>{ S.view = atLimit() ? 'paywall' : 'upload'; render(); };
+  const hb=el('button','btn', S.cases.length ? 'Portfolio view' : 'Back');
+  hb.onclick=()=>{S.view='home'; render();};
   act.append(nb,hb); v.append(act);
 }
 
 function portfolioPanel(){
+  /* Your own cases, never mixed with ours. With none yet, the same view runs
+     over the two samples so the aggregation is visible before you send
+     anything, and it says plainly which set it is describing. */
+  const mine=own();
+  const set = mine.length ? mine : S.cases.filter(a=>a.sample);
+  const isSample = !mine.length;
   const wrap=el('div',''); wrap.style.marginTop='26px';
   const ph=el('div','row'); ph.style.alignItems='baseline';
-  ph.append(el('div','h-md','Portfolio'));
+  ph.append(el('div','h-md', isSample ? 'Portfolio, across the samples' : 'Your portfolio'));
+  if(isSample) ph.append(el('span','chip samp','SAMPLE'));
   wrap.append(ph);
+  if(!set.length) return wrap;
   const counts={}; let exp=0;
-  S.cases.forEach(a=>{counts[a.outcome]=(counts[a.outcome]||0)+1; exp+=a.c.exposure;});
-  ph.append(el('div','tiny',S.cases.length+' case'+(S.cases.length===1?'':'s')
+  set.forEach(a=>{counts[a.outcome]=(counts[a.outcome]||0)+1; exp+=a.c.exposure;});
+  ph.append(el('div','tiny',set.length+' case'+(set.length===1?'':'s')
     +(exp?' · '+money(exp)+' exposure reviewed':'')));
+  if(isSample) wrap.append(el('p','tiny','This is what the portfolio view shows once you have run '
+    +'cases of your own. Recurring weaknesses map to the forward controls that would close them.'));
   const g=el('div','grid'); g.style.gridTemplateColumns='repeat(auto-fit,minmax(200px,1fr))'; g.style.marginTop='12px';
   OUTCOMES.forEach(o=>{
     const c=el('div','card'); c.style.padding='14px';
@@ -1103,7 +1183,7 @@ function portfolioPanel(){
   wrap.append(g);
 
   const freq={};
-  S.cases.forEach(a=>a.raised.forEach(f=>{ freq[f]=(freq[f]||0)+1; }));
+  set.forEach(a=>a.raised.forEach(f=>{ freq[f]=(freq[f]||0)+1; }));
   const ent=Object.entries(freq).sort((x,y)=>y[1]-x[1]);
   if(ent.length){
     const c=el('div','card'); c.style.marginTop='14px';
@@ -1112,8 +1192,8 @@ function portfolioPanel(){
     w.innerHTML='<table><thead><tr><th>Failure</th><th>Mode</th><th class="num">Events</th>'
       +'<th>Pattern</th><th>Forward controls</th></tr></thead><tbody>'
       +ent.map(([f,n])=>{
-        const p = n===1?'isolated' : n>S.cases.length/2 ? 'systemic within the reviewed scope'
-          : n>=Math.max(2,S.cases.length*0.25) ? 'recurring' : 'concentrated';
+        const p = n===1?'isolated' : n>set.length/2 ? 'systemic within the reviewed scope'
+          : n>=Math.max(2,set.length*0.25) ? 'recurring' : 'concentrated';
         return '<tr><td class="mono" style="font-size:11px;color:var(--arc)">'+f+'</td><td>'+esc(ORF[f])
           +'</td><td class="num">'+n+'</td><td style="color:var(--mist)">'+p+'</td><td class="mono" style="font-size:11px">'
           +(F2C[f]||[]).join(' ')+'</td></tr>';
@@ -1207,6 +1287,12 @@ function viewPaywall(){
   }
 }
 
+const sample = a => { a.sample = true; return a; };
+/* The meter, the paywall and the portfolio all count the client's own cases.
+   A sample is ours, so it is excluded from every one of them. */
+const own = () => S.cases.filter(a => !a.sample);
+const atLimit = () => own().length >= FREE && !S.paid;
+
 /* ── router ──────────────────────────────────────────────────────── */
 function render(){
   if(!S.profile) S.view='gate';
@@ -1219,7 +1305,7 @@ function render(){
   else if(S.view==='paywall') viewPaywall();
   window.scrollTo({top:0,behavior:'instant'});
 }
-$('#newcase').onclick=()=>{ S.view=(S.cases.length>=FREE&&!S.paid)?'paywall':'upload'; render(); };
+$('#newcase').onclick=()=>{ S.view=atLimit()?'paywall':'upload'; render(); };
 
 /* Copy the contact address. mailto: is unreliable inside an artifact, so the
    address is shown as selectable text and copying is the affordance. */
@@ -1233,6 +1319,15 @@ $('#copycontact').onclick=async()=>{
     const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r);
     btn.textContent='Select & copy'; setTimeout(()=>{ btn.textContent='Copy'; },2400);
   }
+};
+
+/* For whoever deploys this. In the browser console:
+     XRAY.diag()   what was posted, where it went, and what came back
+     XRAY.state    the cases and the profile held in this browser        */
+window.XRAY = {
+  diag(){ return {endpoint:DIAG.endpoint, posts:DIAG.posts,
+    undelivered:!!S.undelivered, profile:S.profile}; },
+  get state(){ return S; }
 };
 
 render();
