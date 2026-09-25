@@ -1,0 +1,11 @@
+# Built output. Netlify runs tools/build-site.mjs on every deploy, so the
+# built document never needs to be committed.
+dist/
+
+# The Selenium driver is a platform binary, fetched locally rather than
+# committed. tests/run.mjs skips that suite cleanly when it is absent.
+tests/bin/
+
+node_modules/
+.lint-*
+.DS_Store

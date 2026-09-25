@@ -1,0 +1,31 @@
+# Netlify builds the deployable document from index.html, which is an artifact
+# fragment and is not servable on its own. Without this, the site would serve
+# the fragment: no favicon, no character encoding and no mobile scaling.
+[build]
+  command = "node tools/build-site.mjs"
+  publish = "dist"
+
+# There is deliberately no host-to-host redirect here.
+#
+# A forced 301 in this file fires whether or not its destination exists. Today
+# lens.getproxyview.com resolves and www.lens.getproxyview.com does not, so a
+# rule sending the bare host to the www one would take the whole site down the
+# moment it deployed: the only address that works would redirect to an address
+# that does not.
+#
+# Canonicalisation belongs in Netlify's own Domain management instead. Set the
+# primary domain there and Netlify redirects every other attached alias to it,
+# and it can only ever point at a domain actually attached to the site, so it
+# cannot strand the site the way a hand-written rule can.
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

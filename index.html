@@ -1,4 +1,4 @@
-<title>Proxyview Xray</title>
+<title>Proxyview Lens</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
@@ -148,6 +148,10 @@ label{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.14em
 .field{margin-bottom:12px}
 .note{border-left:2px solid var(--amb);padding:9px 13px;background:rgba(255,170,0,.06);font-size:12px;color:var(--mist);border-radius:0 7px 7px 0}
 
+.linkbtn{padding:0;margin-top:7px;color:var(--fog);font-size:11px;text-decoration:underline;
+  text-underline-offset:2px}
+.linkbtn:hover{color:var(--arc)}
+#buildchip{color:var(--fog)}
 .privacy{display:flex;gap:12px;align-items:flex-start;padding:13px 15px;border:1px solid var(--line);
   border-radius:var(--r);background:var(--ink2)}
 .privacy svg{flex:none;margin-top:1px}
@@ -167,14 +171,74 @@ label{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.14em
 input[aria-invalid="true"]{border-color:var(--danger)}
 .who b{color:var(--white);font-weight:600}
 
-@media (max-width:860px){
-  .gate{grid-template-columns:1fr}
-  .app{grid-template-columns:1fr}
-  .rail{border-right:none;border-bottom:1px solid var(--line)}
-  .meter{margin-top:14px}
-  .body{padding:20px 16px 50px}
-  .topbar{padding:12px 16px}
+/* ── Across devices ──────────────────────────────────────────────────
+   Three treatments, not one breakpoint.
+
+   Phone and small tablet: the rail becomes a sticky header whose contents
+   collapse behind a control carrying the case count, so the meter stays
+   legible without opening anything and a report starts at the top of the
+   screen instead of below a column of navigation.
+
+   Tablet: the two-column layout is kept — an iPad in portrait is 768 to 834
+   px and has the room — with a narrower rail and tighter padding.
+
+   Desktop: as drawn.                                                      */
+.railtoggle{display:none}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* tablet */
+@media (min-width:835px) and (max-width:1120px){
+  .app{grid-template-columns:212px 1fr}
+  .rail{padding:16px 11px}
+  .body{padding:22px 20px 50px}
+  .topbar{padding:12px 20px}
   .domains{grid-template-columns:repeat(4,1fr)}
+  .h-lg{font-size:24px}
+  .gate{gap:20px}
+}
+
+/* phone and small tablet in portrait */
+@media (max-width:834px){
+  .app{grid-template-columns:1fr}
+  .gate{grid-template-columns:1fr}
+  .rail{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;
+    border-right:none;border-bottom:1px solid var(--line);
+    padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top,0px));gap:0}
+  .brand{padding:0;align-items:center;gap:10px}
+  .brand .nm{font-size:15px}
+  .railtoggle{display:flex;align-items:center;justify-content:center;gap:8px;margin-left:auto;
+    min-height:44px;padding:10px 14px;border:1px solid var(--line);border-radius:999px;
+    font-size:12px;font-weight:600;color:var(--mist);background:var(--ink3)}
+  .rail[data-open="true"] .railtoggle{border-color:var(--arc);color:var(--arc)}
+  .railbody{display:none;flex-direction:column;gap:0;padding-top:10px}
+  .rail[data-open="true"] .railbody{display:flex}
+  .meter{margin-top:14px}
+  .caseitem,.newbtn{min-height:44px}
+  .btn{min-height:44px}
+  .body{padding:18px 16px 48px}
+  .topbar{padding:11px 16px;gap:10px}
+  .topbar .chip{font-size:9px}
+  .h-lg{font-size:23px}
+  .h-md{font-size:16px}
+  .domains{grid-template-columns:repeat(4,1fr);gap:5px}
+  .dom{padding:8px 3px}
+  .dom .v{font-size:8.5px}
+  .tk{width:78px;font-size:9px}
+  .plan{padding:14px}
+  details.finding>summary{padding:12px 13px}
+  details.finding .inner{padding:0 13px 14px;padding-top:12px}
+  .card{padding:15px}
+  /* 16px stops iOS zooming the whole page when a field takes focus */
+  input,select,textarea{font-size:16px}
+}
+
+/* narrow phone */
+@media (max-width:400px){
+  .domains{grid-template-columns:repeat(2,1fr)}
+  .h-lg{font-size:21px}
+  .brand .tag{display:none}
+  .tk{width:100%}
+  .tstep{flex-direction:column;gap:2px}
 }
 </style>
 
@@ -186,13 +250,13 @@ input[aria-invalid="true"]{border-color:var(--danger)}
      the form-name sent in the handler, or Netlify rejects the submission.
      The case form carries a file input, which is what makes Netlify accept
      the upload and put a link to it in the notification email.            -->
-<form name="xray-signup" data-netlify="true" netlify-honeypot="bot-field" hidden>
+<form name="lens-signup" data-netlify="true" netlify-honeypot="bot-field" hidden>
   <input type="email" name="email">
   <input type="tel" name="phone">
   <input type="text" name="company">
   <input type="text" name="bot-field">
 </form>
-<form name="xray-case" data-netlify="true" netlify-honeypot="bot-field"
+<form name="lens-case" data-netlify="true" netlify-honeypot="bot-field"
       enctype="multipart/form-data" hidden>
   <input type="email" name="email">
   <input type="tel" name="phone">
@@ -202,7 +266,7 @@ input[aria-invalid="true"]{border-color:var(--danger)}
   <input type="file" name="evidence" multiple>
   <input type="text" name="bot-field">
 </form>
-<form name="xray-contact" data-netlify="true" netlify-honeypot="bot-field" hidden>
+<form name="lens-contact" data-netlify="true" netlify-honeypot="bot-field" hidden>
   <input type="email" name="email">
   <input type="tel" name="phone">
   <input type="text" name="company">
@@ -212,18 +276,27 @@ input[aria-invalid="true"]{border-color:var(--danger)}
 </form>
 
 <div class="app">
-  <aside class="rail">
+  <aside class="rail" id="rail">
     <div class="brand">
       <svg width="26" height="26" viewBox="0 0 512 512" role="img" aria-label="Proxyview">
         <polygon points="256,38 444.8,147 444.8,365 256,474 67.2,365 67.2,147" fill="none" stroke="#22d3ee" stroke-width="40" stroke-linejoin="miter"></polygon>
         <circle cx="256" cy="256" r="76" fill="#22d3ee"></circle>
       </svg>
       <div>
-        <div class="nm">Xray</div>
+        <div class="nm">Lens</div>
         <div class="tag">PROXYVIEW</div>
       </div>
+      <button class="railtoggle" id="railtoggle" type="button"
+        aria-controls="railbody" aria-expanded="false">
+        <span id="railcount">0 of 5</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" fill="none">
+          <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+        </svg>
+        <span class="vh">Cases and account</span>
+      </button>
     </div>
 
+    <div class="railbody" id="railbody">
     <div class="railhead">ASSURANCE CASES</div>
     <div id="caselist"></div>
     <button class="newbtn" id="newcase">+ &nbsp;New case</button>
@@ -240,6 +313,10 @@ input[aria-invalid="true"]{border-color:var(--danger)}
 
     <div id="who" class="tiny" hidden style="padding:11px 3px 0;border-top:1px solid var(--line);margin-top:12px"></div>
 
+    <div id="quotanote" class="tiny" hidden style="padding:8px 3px 0;color:var(--fog)">
+      Case count could not be confirmed with the server; this device is counting.
+    </div>
+
     <div id="undelivered" class="undeliv" hidden>
       <div class="lbl">NOT DELIVERED</div>
       <div class="tiny">Your details did not reach Proxyview. Your cases still run and stay in this
@@ -253,6 +330,7 @@ input[aria-invalid="true"]{border-color:var(--danger)}
         <button class="btn ghost copy" id="copycontact" aria-label="Copy the contact address">Copy</button>
       </div>
     </div>
+    </div>
   </aside>
 
   <div class="main">
@@ -261,6 +339,7 @@ input[aria-invalid="true"]{border-color:var(--danger)}
       <div class="spacer"></div>
       <div class="chip" id="libchip">ORA library v0.1.0</div>
       <div class="chip">48 controls · 40 failure modes</div>
+      <div class="chip" id="buildchip" title="The build this page was deployed from">__BUILD__</div>
     </header>
     <div class="body" id="view"></div>
   </div>
@@ -569,7 +648,12 @@ function renderRail(){
   if(S.profile){
     w.hidden=false;
     w.className='tiny who';
-    w.innerHTML='<b>'+esc(S.profile.company)+'</b><br>'+esc(S.profile.email)+'<br>'+esc(S.profile.phone);
+    w.innerHTML='<b>'+esc(S.profile.company)+'</b><br>'+esc(S.profile.email)+'<br>'
+      +esc(S.profile.phone)
+      +'<br><button class="linkbtn" id="signout" type="button">Not you? Start over</button>';
+    const so=w.querySelector('#signout');
+    if(so) so.onclick=()=>{ if(S.confirmOut){ forgetState(); }
+      else { S.confirmOut=true; so.textContent='Tap again to clear this workspace'; } };
   } else { w.hidden=true; }
   $('#newcase').disabled=!S.profile;
   const u=$('#undelivered'); if(u) u.hidden=!S.undelivered;
@@ -581,7 +665,7 @@ function renderRail(){
       '<span class="cid">'+esc(a.c.id)+'</span>'+
       (a.sample?'<span class="chip samp">SAMPLE</span>':'')+
       '<span class="chip">'+a.M+'</span>';
-    b.onclick=()=>{S.sel=a.c.id; S.view='report'; render();};
+    b.onclick=()=>{S.sel=a.c.id; S.view='report'; closeRail(); render();};
     return b;
   };
   const samples=S.cases.filter(a=>a.sample), mine=own();
@@ -593,11 +677,15 @@ function renderRail(){
   if(!mine.length) list.append(el('div','tiny',
     '<span style="padding:0 6px">None yet. Start a case to upload a closed account.</span>'));
   mine.forEach(a=>list.append(row(a)));
-  const used=mine.length;
+  const used=spent();
   $('#used').textContent=Math.min(used,FREE);
   const bar=$('#bar'); bar.innerHTML='';
   for(let i=0;i<FREE;i++){const i2=el('i'); if(i<used) i2.className=used>=FREE?'full':'on'; bar.append(i2);}
   const over = used>=FREE && !S.paid;
+  const rc=$('#railcount');
+  if(rc) rc.textContent = S.paid ? 'Unlimited' : used+' of '+FREE;
+  const q=$('#quotanote');
+  if(q) q.hidden = S.quotaServer !== false || !S.profile;
   $('#metertext').textContent = S.paid
     ? 'Cycle active. Cases run without a limit.'
     : over ? 'Free cases used. Talk to us about a cycle.'
@@ -614,7 +702,7 @@ function viewHome(){
   v.append(el('div','eyebrow','RETROSPECTIVE PORTFOLIO ASSURANCE'));
   v.append(el('h1','h-lg','Send us the closed account.'));
   v.append(el('p','sub',
-    'Xray reconstructs what the decision relied upon, tests the evidence across the eight ORA domains, '
+    'Lens reconstructs what the decision relied upon, tests the evidence across the eight ORA domains, '
     +'determines what the evidence establishes, and shows where assurance broke down. '
     +'Five closed cases run free.'));
 
@@ -698,7 +786,7 @@ function viewGate(){
   left.append(el('div','eyebrow','RETROSPECTIVE PORTFOLIO ASSURANCE'));
   left.append(el('h1','h-lg','Send us the closed account.'));
   left.append(el('p','sub',
-    'Xray reconstructs what the decision relied upon, tests the evidence across the eight ORA domains, '
+    'Lens reconstructs what the decision relied upon, tests the evidence across the eight ORA domains, '
     +'determines what the evidence establishes, and shows where assurance broke down. '
     +'Five closed cases run free.'));
 
@@ -768,13 +856,30 @@ function viewGate(){
     const ok=fields.map(([id,fn])=>validate(id,fn,true)).every(Boolean);
     if(!ok){ const bad=fields.find(([id,fn])=>fn($('#'+id).value)); if(bad) $('#'+bad[0]).focus(); return; }
     S.profile={email:$('#gmail').value.trim(),phone:$('#gphone').value.trim(),company:$('#gcompany').value.trim()};
+    S.identity=identity(S.profile.email);
+
+    /* Signing in again from the same organisation reopens that workspace with
+       its allowance already spent, rather than handing out a fresh five. */
+    const prior=S.identity && restoreFor(S.identity);
+    if(prior){
+      S.paid=!!prior.paid;
+      S.spent=prior.spent||0;
+      S.cases=(prior.cases||[]).map(x=>x.sample
+        ? sample(assess(SAMPLES[x.i>=0?x.i:0],false))
+        : assess(reviveCase(x.c), !!(x.c&&x.c.live)));
+    }
+    try{ if(S.identity) localStorage.setItem(STORE+'.last', S.identity.key); }
+    catch{ /* storage blocked; the session still works */ }
+
+    /* And the server is asked for the count that actually decides. */
+    askQuota('check');
 
     /* Send the details to Netlify Forms. The client is never held up by this:
        the workspace opens whether or not the post succeeds, and a failure is
        recorded on the profile rather than shown, so a network problem at
        their end does not cost you the case. Check Netlify's Forms tab for
        what actually arrived. */
-    postForm('xray-signup',{
+    postForm('lens-signup',{
       email:S.profile.email, phone:S.profile.phone, company:S.profile.company
     })
       .then(r=>{ S.profile.delivered=!!(r&&r.ok); })
@@ -784,7 +889,8 @@ function viewGate(){
        empty and so the portfolio view has something to aggregate. They are
        labelled as samples everywhere they appear and they never touch the
        free allowance, which counts the client's own cases only. */
-    S.cases.push(sample(assess(SAMPLES[0],false)), sample(assess(SAMPLES[3],false)));
+    if(!S.cases.some(a=>a.sample))
+      S.cases.unshift(sample(assess(SAMPLES[0],false)), sample(assess(SAMPLES[3],false)));
     S.view='home'; render();
   };
 }
@@ -798,7 +904,7 @@ function viewUpload(){
   v.append(el('div','eyebrow','STEP 1 OF 3 — UPLOAD'));
   v.append(el('h1','h-lg','Upload the closed account'));
   v.append(el('p','sub','Drop the decision file: inspection reports, site photographs, invoices, '
-    +'draw requests, workflow logs, sign-offs, prior observations. Xray classifies each item '
+    +'draw requests, workflow logs, sign-offs, prior observations. Lens classifies each item '
     +'into an evidence class and tells you what it could not establish.'));
   const pvu=privacyBlock('upload'); pvu.style.marginTop='16px'; v.append(pvu);
 
@@ -816,7 +922,7 @@ function viewUpload(){
   const samp=el('button','btn','Use a sample account instead');
   samp.onclick=()=>{ runOne(SAMPLES[S.nextSample % SAMPLES.length], false); };
   act.append(go,samp); v.append(act);
-  const nt=el('div','note','Xray classifies each file and tests presence, freshness and sufficiency '
+  const nt=el('div','note','Lens classifies each file and tests presence, freshness and sufficiency '
     +'from what it can read in the browser. Controls that need field-level data — a coordinate inside '
     +'an image, an amount inside an invoice — report that they could not run, rather than returning a '
     +'pass. Those are completed by the assurance team from the file you send.');
@@ -933,7 +1039,7 @@ function sendCase(a){
     'Second review: '+(a.review.length?a.review.join('; '):'not required'),
     'Files: '+(a.c.files||[]).join(', ')
   ].join('\n');
-  postForm('xray-case',{
+  postForm('lens-case',{
     email:who.email||'', phone:who.phone||'', company:who.company||'',
     case:a.c.id, summary
   }, S.pendingFiles||[])
@@ -997,6 +1103,7 @@ function viewRun(){
   const tick=()=>{
     if(i>0) nodes[i-1].dataset.s='done';
     if(i>=nodes.length){
+      askQuota('consume');
       if(a.c.live) sendCase(a);
       S.cases.push(a); S.sel=a.c.id; S.view='report'; return render();
     }
@@ -1268,7 +1375,7 @@ function viewPaywall(){
         if(msg) ok=false;
       });
       if(!ok){ const bad=checks.find(([id,fn])=>fn($('#'+id).value)); if(bad) $('#'+bad[0]).focus(); return; }
-      postForm('xray-contact',{
+      postForm('lens-contact',{
         email:$('#cemail').value.trim(), phone:$('#cphone').value.trim(),
         company:$('#ccompany').value.trim(), route:route, message:$('#cmsg').value.trim()
       }).catch(()=>{});
@@ -1288,14 +1395,176 @@ function viewPaywall(){
 }
 
 const sample = a => { a.sample = true; return a; };
+
+/* ── The allowance ─────────────────────────────────────────────────────
+   A page cannot hold a usage limit. Whatever it stores, the reader can clear,
+   and an incognito window starts clean. The count that decides anything lives
+   on the server, at /api/quota, keyed on the organisation.
+
+   What is kept here is a mirror of it, so the meter can render immediately.
+   When the server answers, its number wins. When the server cannot be
+   reached, the mirror is used and the fact is recorded rather than hidden,
+   because a client should not be locked out by our outage.               */
+const QUOTA = '/api/quota';
+
+/* Replies can land out of order — a check answering after a consume would put
+   the older, smaller count back. Each call takes a ticket and only the newest
+   reply is allowed to write. */
+let quotaSeq = 0;
+
+function askQuota(action){
+  if(!S.profile) return Promise.resolve(null);
+  const seq = ++quotaSeq;
+  const apply = (fn) => { if(seq === quotaSeq) fn(); };
+  return fetch(QUOTA, {method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action, email:S.profile.email,
+      company:S.profile.company, phone:S.profile.phone})})
+    .then(r=>{
+      if(!r.ok) throw new Error('quota ' + r.status);
+      return r.json();
+    })
+    .then(d=>{
+      if(typeof d.used === 'number'){
+        apply(()=>{
+          S.spent = d.used;
+          S.quotaServer = !d.degraded;
+          DIAG.quota = {action, used:d.used, limit:d.limit, scope:d.scope,
+            degraded: !!d.degraded};
+          saveState(); renderRail();
+        });
+      }
+      return d;
+    })
+    .catch(err=>{
+      apply(()=>{
+        S.quotaServer = false;
+        DIAG.quota = {action, error: String((err && err.message) || err)};
+        renderRail();
+      });
+      return null;
+    });
+}
+
+/* What the meter shows: the server's count where we have one, and the cases
+   in front of them otherwise. Never the smaller of the two. */
+const spent = () => Math.max(S.spent||0, own().length);
+const atLimit = () => spent() >= FREE && !S.paid;
+
+/* ── Coming back later ─────────────────────────────────────────────────
+   Everything lived in memory, so a refresh or a return visit lost the
+   profile and every completed case and asked the client to sign up again.
+   The workspace is kept in this browser instead.
+
+   Only the inputs are stored, never the assessment: on return the cases are
+   re-run through the current methodology, so a client who comes back after a
+   library change sees results consistent with it rather than a stale verdict
+   with a new version number on it. Uploaded files are not stored — a browser
+   cannot keep them and they have already been sent.                       */
+const STORE = 'pv.lens.v1';
+
+/* The allowance belongs to the organisation, taken from the work-email
+   domain, not to the person. Changing name, phone or mailbox inside the same
+   company reaches the same record and the same remaining count.
+
+   A plus-tag is stripped first, because kunle+2@ is the cheapest way to look
+   like somebody new.
+
+   Consumer mailboxes have no company behind them, so those key on the whole
+   address instead. */
+function identity(email){
+  const e=String(email||'').trim().toLowerCase();
+  const at=e.lastIndexOf('@');
+  if(at<1) return null;
+  let local=e.slice(0,at);
+  const domain=e.slice(at+1);
+  if(!domain.includes('.')) return null;
+  const plus=local.indexOf('+');
+  if(plus>0) local=local.slice(0,plus);
+  return {email:local+'@'+domain, domain,
+    consumer:CONSUMER.includes(domain),
+    key:CONSUMER.includes(domain) ? 'person:'+local+'@'+domain : 'company:'+domain};
+}
+const storeKey = id => STORE+'.'+id.key;
+
+function serialiseCase(c){
+  return {id:c.id, acct:c.acct, parcel:c.parcel, exposure:c.exposure,
+    docAmount:c.docAmount, ageDays:c.ageDays, live:!!c.live,
+    claim:c.claim, classes:[...c.classes], f:c.f, files:c.files||[]};
+}
+function reviveCase(o){ return Object.assign({}, o, {classes:new Set(o.classes||[])}); }
+
+function saveState(){
+  if(!S.profile || !S.identity) return;
+  try{
+    localStorage.setItem(storeKey(S.identity), JSON.stringify({
+      v:2, at:Date.now(), profile:S.profile, paid:!!S.paid, spent:S.spent||0,
+      cases:S.cases.map(a=>a.sample
+        ? {sample:true, i:SAMPLES.findIndex(x=>x.id===a.c.id)}
+        : {sample:false, c:serialiseCase(a.c)})
+    }));
+  }catch{ /* a private window or blocked site data; the session still works */ }
+}
+
+/* Signing in again with the same organisation reopens that workspace with the
+   allowance already spent, rather than handing out a fresh five. */
+function restoreFor(id){
+  let d;
+  try{
+    const raw=localStorage.getItem(storeKey(id));
+    if(!raw) return null;
+    d=JSON.parse(raw);
+  }catch{ return null; }
+  return (d && d.v===2 && d.profile && d.profile.email) ? d : null;
+}
+
+function lastIdentity(){
+  try{
+    const k=localStorage.getItem(STORE+'.last');
+    if(!k) return null;
+    const raw=localStorage.getItem(STORE+'.'+k);
+    if(!raw) return null;
+    const d=JSON.parse(raw);
+    return d && d.profile ? identity(d.profile.email) : null;
+  }catch{ return null; }
+}
+
+function restoreState(){
+  const id=lastIdentity();
+  if(!id) return false;
+  const d=restoreFor(id);
+  if(!d) return false;
+  try{
+    S.identity=id;
+    S.profile=d.profile;
+    S.paid=!!d.paid;
+    S.spent=d.spent||0;
+    S.cases=(d.cases||[]).map(x=>x.sample
+      ? sample(assess(SAMPLES[x.i>=0?x.i:0], false))
+      : assess(reviveCase(x.c), !!(x.c&&x.c.live)));
+    return true;
+  }catch{
+    S.profile=null; S.cases=[]; S.paid=false; S.identity=null; S.spent=0;
+    return false;
+  }
+}
+
+/* Clears the sign-in on this device. It does not return the allowance: that
+   record belongs to the organisation and is held on the server. */
+function forgetState(){
+  try{ localStorage.removeItem(STORE+'.last'); }catch{ /* nothing to clear */ }
+  S.profile=null; S.cases=[]; S.paid=false; S.sel=null; S.identity=null; S.spent=0;
+  S.dropped=[]; S.rejected=[]; S.undelivered=false;
+  S.view='gate'; render();
+}
 /* The meter, the paywall and the portfolio all count the client's own cases.
    A sample is ours, so it is excluded from every one of them. */
 const own = () => S.cases.filter(a => !a.sample);
-const atLimit = () => own().length >= FREE && !S.paid;
 
 /* ── router ──────────────────────────────────────────────────────── */
 function render(){
   if(!S.profile) S.view='gate';
+  saveState();
   renderRail();
   if(S.view==='gate') viewGate();
   else if(S.view==='home') viewHome();
@@ -1305,7 +1574,22 @@ function render(){
   else if(S.view==='paywall') viewPaywall();
   window.scrollTo({top:0,behavior:'instant'});
 }
-$('#newcase').onclick=()=>{ S.view=atLimit()?'paywall':'upload'; render(); };
+$('#newcase').onclick=()=>{ S.view=atLimit()?'paywall':'upload'; closeRail(); render(); };
+
+/* On a phone the rail is a drawer. It opens from the control in the header,
+   closes on picking a case so the report is not left behind it, and closes on
+   Escape. On a tablet or a desktop the control is not rendered and the body is
+   always open, so none of this applies. */
+const rail = $('#rail');
+const railToggle = $('#railtoggle');
+function railOpen(){ return rail.dataset.open === 'true'; }
+function setRail(open){
+  rail.dataset.open = open ? 'true' : 'false';
+  railToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+function closeRail(){ if(railOpen()) setRail(false); }
+railToggle.onclick=()=>setRail(!railOpen());
+document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeRail(); });
 
 /* Copy the contact address. mailto: is unreliable inside an artifact, so the
    address is shown as selectable text and copying is the affordance. */
@@ -1322,11 +1606,18 @@ $('#copycontact').onclick=async()=>{
 };
 
 /* For whoever deploys this. In the browser console:
-     XRAY.diag()   what was posted, where it went, and what came back
-     XRAY.state    the cases and the profile held in this browser        */
-window.XRAY = {
-  diag(){ return {endpoint:DIAG.endpoint, posts:DIAG.posts,
-    undelivered:!!S.undelivered, profile:S.profile}; },
+     LENS.diag()   what was posted, where it went, and what came back
+     LENS.state    the cases and the profile held in this browser        */
+/* A returning client lands back in their workspace rather than at the gate. */
+if(restoreState()) S.view='home';
+
+window.LENS = {
+  diag(){ return {build:'__BUILD__', endpoint:DIAG.endpoint, posts:DIAG.posts,
+    undelivered:!!S.undelivered, profile:S.profile,
+    cases:S.cases.length, mine:own().length, stored:(()=>{
+      try{ return !!localStorage.getItem(STORE); }catch{ return 'unavailable'; }
+    })()}; },
+  forget(){ forgetState(); return 'workspace cleared'; },
   get state(){ return S; }
 };
 
